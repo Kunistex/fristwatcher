@@ -81,7 +81,8 @@ class AppFlowTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)->get(route('contracts.create'))->assertOk()->assertSee('Krankenkasse Grundversicherung');
-        $this->actingAs($user)->get(route('contracts.create', ['template' => 'kvg-grundversicherung']))->assertOk()->assertSee('Feste Kündigungstermine');
+        $this->actingAs($user)->get(route('contracts.create', ['template' => 'kvg-grundversicherung']))->assertOk()->assertSee('Feste Kündigungstermine')
+            ->assertSee('name="notice_value" type="number" min="0" max="730" value="1"', false);
 
         $response = $this->actingAs($user)->post(route('contracts.store'), $this->kvgPayload());
 

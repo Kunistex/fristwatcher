@@ -61,7 +61,6 @@
 
 @layer base {
   html {
-    font-feature-settings: 'tnum' 1;
     -webkit-tap-highlight-color: transparent;
   }
 

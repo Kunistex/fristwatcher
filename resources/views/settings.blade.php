@@ -5,7 +5,7 @@
         <form method="POST" action="{{ route('settings.update') }}" class="space-y-8">
             @csrf @method('PUT')
 
-            <fieldset class="panel space-y-5 p-5 sm:p-6">
+            <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
                 <legend class="section-title float-left mb-1 w-full">Profil und Adresse</legend>
                 <p class="clear-both -mt-2 text-[14px] text-ink-soft">Die Adresse erscheint als Absender auf Kündigungsschreiben.</p>
                 <div class="grid gap-5 sm:grid-cols-2">
@@ -45,7 +45,7 @@
                 </div>
             </fieldset>
 
-            <fieldset class="panel space-y-5 p-5 sm:p-6">
+            <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
                 <legend class="section-title float-left mb-1 w-full">Erinnerungen</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>

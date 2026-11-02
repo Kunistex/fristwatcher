@@ -17,7 +17,7 @@
         <input type="hidden" name="template_id" value="{{ old('template_id', $contract->template_id) }}">
 
         <div class="space-y-8">
-            <fieldset class="panel space-y-5 p-5 sm:p-6">
+            <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
                 <legend class="section-title float-left mb-1 w-full">Vertrag</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
@@ -47,7 +47,7 @@
                 </div>
             </fieldset>
 
-            <fieldset class="panel space-y-5 p-5 sm:p-6">
+            <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
                 <legend class="section-title float-left mb-1 w-full">Kosten</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
@@ -66,7 +66,7 @@
                 </div>
             </fieldset>
 
-            <fieldset class="panel space-y-5 p-5 sm:p-6">
+            <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
                 <legend class="section-title float-left mb-1 w-full">Laufzeit und Kündigung</legend>
 
                 <div>
@@ -115,7 +115,7 @@
                     <p class="label">Kündigungsfrist</p>
                     <div class="flex items-center gap-2">
                         <label for="notice_value" class="sr-only">Anzahl</label>
-                        <input id="notice_value" name="notice_value" type="number" min="0" max="730" value="{{ $v('notice_value', 0) }}" class="field w-24">
+                        <input id="notice_value" name="notice_value" type="number" min="0" max="730" value="{{ $v('notice_value') ?? 0 }}" class="field w-24">
                         <label for="notice_unit" class="sr-only">Einheit</label>
                         <select id="notice_unit" name="notice_unit" class="field w-36">
                             @foreach (\App\Enums\NoticeUnit::cases() as $u)
@@ -128,7 +128,7 @@
                 </div>
             </fieldset>
 
-            <fieldset class="panel space-y-5 p-5 sm:p-6">
+            <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
                 <legend class="section-title float-left mb-1 w-full">Erinnerungen</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
@@ -144,7 +144,7 @@
                 </div>
             </fieldset>
 
-            <fieldset class="panel space-y-5 p-5 sm:p-6">
+            <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
                 <legend class="section-title float-left mb-1 w-full">Kündigung an</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
