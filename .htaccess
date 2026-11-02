@@ -1,0 +1,8 @@
+# Fallback, falls der Document Root nicht auf /public gesetzt werden kann:
+# leitet alle Anfragen in den public-Ordner und sperrt den Rest.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(\.env|composer\.(json|lock)|artisan)$ - [F,L]
+    RewriteRule ^((app|bootstrap|config|database|resources|routes|storage|tests|vendor)/.*)$ - [F,L]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

@@ -1,0 +1,162 @@
+name: CI und Deployment
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Tests (PHP 8.3, MariaDB)
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, gd, intl, bcmath, gmp, zip
+          coverage: none
+
+      - name: Composer-Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ hashFiles('composer.json', 'composer.lock') }}
+
+      - name: Abhängigkeiten installieren
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Tests
+        env:
+          DB_CONNECTION: mariadb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan test
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Assets bauen
+        run: npm ci && npm run build
+
+  deploy:
+    name: Deployment auf den Webserver
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      PHP_BIN: ${{ secrets.PHP_BIN || 'php' }}
+
+    steps:
+      - name: Secrets prüfen
+        id: check
+        run: |
+          missing=""
+          for v in SSH_HOST SSH_USER SSH_PRIVATE_KEY DEPLOY_PATH; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::warning::Deployment übersprungen, fehlende Secrets:$missing"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+
+      - uses: shivammathur/setup-php@v2
+        if: steps.check.outputs.ready == 'true'
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, gd, intl, bcmath, gmp, zip
+          coverage: none
+
+      - name: Produktions-Abhängigkeiten
+        if: steps.check.outputs.ready == 'true'
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Assets bauen
+        if: steps.check.outputs.ready == 'true'
+        run: npm ci && npm run build
+
+      - name: SSH einrichten
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+
+      - name: Dateien übertragen
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='tests/' \
+            --exclude='/.env' --exclude='/storage/' --exclude='/public/storage' --exclude='/public/hot' \
+            --exclude='.phpunit.cache/' --exclude='.editorconfig' --exclude='phpunit.xml' \
+            -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
+            ./ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
+
+      - name: Migrationen und Caches
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" bash -s -- "$DEPLOY_PATH" "$PHP_BIN" <<'REMOTE'
+          set -euo pipefail
+          cd "$1"
+          PHP="$2"
+          mkdir -p storage/app/private storage/app/public storage/framework/cache/data \
+                   storage/framework/sessions storage/framework/views storage/logs storage/fonts bootstrap/cache
+          if [ ! -f .env ]; then
+            echo "::error::.env fehlt in $1. Einmalig aus .env.example anlegen (siehe README)."
+            exit 1
+          fi
+          "$PHP" artisan down --retry=15 || true
+          trap '"$PHP" artisan up' EXIT
+          "$PHP" artisan migrate --force
+          "$PHP" artisan db:seed --class=ReferenceDataSeeder --force
+          "$PHP" artisan optimize:clear
+          "$PHP" artisan optimize
+          [ -L public/storage ] || "$PHP" artisan storage:link || true
+          echo "Deployment fertig: $("$PHP" artisan --version)"
+          REMOTE

@@ -1,0 +1,133 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+@source '../views';
+@source '../js';
+
+/*
+ * Fristenwächter
+ * Kühles Papier, Schieferblau als Tinte, Petrol als einzige Akzentfarbe.
+ * Ampelfarben erscheinen ausschliesslich an Fristen.
+ */
+@theme {
+  --font-sans: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: #f4f6f6;
+  --color-sheet: #ffffff;
+  --color-line: #dde3e4;
+  --color-line-strong: #c4ced0;
+  --color-ink: #1d2b34;
+  --color-ink-soft: #54646d;
+  --color-ink-faint: #85939a;
+
+  --color-accent: #0f6e6e;
+  --color-accent-strong: #0b5555;
+  --color-accent-wash: #e3f0ef;
+
+  --color-due-critical: #b42318;
+  --color-due-critical-wash: #fcebe9;
+  --color-due-soon: #9a6400;
+  --color-due-soon-wash: #fbf1dc;
+  --color-due-ok: #2f7d4f;
+  --color-due-ok-wash: #e6f2ea;
+  --color-due-none: #85939a;
+  --color-due-none-wash: #eef1f2;
+
+  --radius-tile: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper: #11181c;
+    --color-sheet: #182227;
+    --color-line: #26343b;
+    --color-line-strong: #34454d;
+    --color-ink: #e6ecee;
+    --color-ink-soft: #a9b6bc;
+    --color-ink-faint: #7a8a91;
+    --color-accent: #3fb5ad;
+    --color-accent-strong: #66cbc4;
+    --color-accent-wash: #15302f;
+    --color-due-critical: #f2867b;
+    --color-due-critical-wash: #3a1d1a;
+    --color-due-soon: #e8b552;
+    --color-due-soon-wash: #33290f;
+    --color-due-ok: #77c494;
+    --color-due-ok-wash: #16301f;
+    --color-due-none: #7a8a91;
+    --color-due-none-wash: #1f2a2f;
+  }
+}
+
+@layer base {
+  html {
+    font-feature-settings: 'tnum' 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-paper text-ink antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  [x-cloak] {
+    display: none !important;
+  }
+}
+
+@utility field {
+  @apply block w-full rounded-lg border-line-strong bg-sheet px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-accent focus:ring-accent;
+}
+
+@utility label {
+  @apply mb-1.5 block text-sm font-medium text-ink;
+}
+
+@utility hint {
+  @apply mt-1.5 text-[13px] leading-snug text-ink-soft;
+}
+
+@utility error {
+  @apply mt-1.5 text-[13px] font-medium text-due-critical;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-semibold transition-colors disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply btn bg-accent text-white hover:bg-accent-strong dark:text-paper;
+}
+
+@utility btn-secondary {
+  @apply btn border border-line-strong bg-sheet text-ink hover:border-ink-faint;
+}
+
+@utility btn-quiet {
+  @apply btn px-3 text-ink-soft hover:text-ink;
+}
+
+@utility btn-danger {
+  @apply btn border border-line-strong bg-sheet text-due-critical hover:border-due-critical;
+}
+
+@utility panel {
+  @apply rounded-[14px] border border-line bg-sheet;
+}
+
+@utility section-title {
+  @apply text-[17px] font-semibold tracking-tight text-ink;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
