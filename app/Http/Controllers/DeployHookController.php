@@ -61,15 +61,21 @@ class DeployHookController extends Controller
         return response(implode("\n\n", $log))->header('Content-Type', 'text/plain');
     }
 
-    /** Web-Cron: jede Minute aufrufen, falls das Hosting nur URL-Cronjobs kennt. */
+    /** Web-Cron: regelmässig aufrufen (alle 15–60 Minuten), falls das Hosting keine Cronjobs kennt. */
     public function schedule(Request $request): Response
     {
         $this->authorizeToken($request->query('token'));
         $this->ensureStorage();
 
-        Artisan::call('schedule:run');
+        // Direkt statt schedule:run, damit es bei jedem Aufrufrhythmus funktioniert
+        // (z.B. alle 15 oder 30 Minuten von einem externen Dienst). Beide Befehle sind idempotent.
+        $out = [];
+        foreach (['fristwatcher:refresh', 'fristwatcher:send-reminders'] as $command) {
+            Artisan::call($command);
+            $out[] = $command.': '.trim(Artisan::output());
+        }
 
-        return response(trim(Artisan::output()) ?: 'ok')->header('Content-Type', 'text/plain');
+        return response(implode("\n", $out))->header('Content-Type', 'text/plain');
     }
 
     private function authorizeToken(?string $given): void

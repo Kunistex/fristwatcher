@@ -1,0 +1,29 @@
+name: Erinnerungen (Cron)
+
+# Ruft alle 30 Minuten /_cron auf: Fristen neu berechnen, fällige Erinnerungen senden.
+# Ersatz für einen Cronjob im Hosting-Panel. GitHub startet geplante Läufe teils mit Verzögerung,
+# das ist hier unkritisch. Hinweis: GitHub pausiert geplante Workflows nach 60 Tagen ohne Commits
+# im Repo; dann unter Actions → "Erinnerungen (Cron)" wieder aktivieren.
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: /_cron aufrufen
+        env:
+          TOKEN: ${{ secrets.DEPLOY_HOOK_TOKEN }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$APP_URL" ]; then
+            echo "::warning::DEPLOY_HOOK_TOKEN oder APP_URL fehlt."
+            exit 0
+          fi
+          code=$(curl -sS --max-time 120 -o out.txt -w '%{http_code}' "${APP_URL%/}/_cron?token=${TOKEN}" || echo 000)
+          echo "HTTP $code"
+          cat out.txt
+          [ "$code" = "200" ] || { echo "::error::/_cron antwortete mit HTTP $code"; exit 1; }
