@@ -129,7 +129,7 @@ jobs:
           EXCL="--exclude-glob .git/ --exclude-glob .github/ --exclude-glob node_modules/ --exclude-glob tests/ --exclude-glob .env --exclude-glob storage/ --exclude-glob vendor/ --exclude-glob .editorconfig --exclude-glob phpunit.xml"
           export LFTP_PASSWORD="$FTP_PASSWORD"
           lftp --env-password -u "$FTP_USERNAME" "$FTP_SERVER" <<LFTP
-          set net:max-retries 3; set net:timeout 30; set net:reconnect-interval-base 5
+          set cmd:fail-exit true; set net:max-retries 3; set net:timeout 30; set net:reconnect-interval-base 5
           $TLS
           set ftp:passive-mode true
           mkdir -p -f "$DIR"
