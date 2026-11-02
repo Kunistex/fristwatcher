@@ -42,7 +42,7 @@ jobs:
           key: composer-${{ hashFiles('composer.json', 'composer.lock') }}
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress && touch .env
 
       - name: Tests
         env:

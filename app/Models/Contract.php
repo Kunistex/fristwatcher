@@ -22,6 +22,16 @@ class Contract extends Model
     /** @use HasFactory<ContractFactory> */
     use HasFactory;
 
+    /** Gleiche Standardwerte wie in der Migration, damit sie schon vor dem Speichern gelten. */
+    protected $attributes = [
+        'status' => 'active',
+        'cost_amount' => 0,
+        'cost_interval' => 'monthly',
+        'notice_anchor' => 'term_end',
+        'notice_value' => 0,
+        'notice_unit' => 'months',
+    ];
+
     protected $fillable = [
         'category_id', 'template_id', 'name', 'provider', 'customer_number',
         'cost_amount', 'cost_interval', 'start_date', 'min_term_months', 'renewal_months',

@@ -1,0 +1,56 @@
+name: Screenshots
+
+# Manuell starten: erstellt Screenshots mit Demo-Daten und legt sie im Branch "screenshots" ab.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, gd, intl, bcmath, gmp, zip
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: App vorbereiten
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          sed -i 's/^APP_ENV=.*/APP_ENV=local/; s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/; s/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/; s#^APP_URL=.*#APP_URL=http://127.0.0.1:8000#; s/^MAIL_MAILER=.*/MAIL_MAILER=log/' .env
+          sed -i '/^DB_DATABASE=/d' .env
+          touch database/database.sqlite
+          php artisan key:generate
+          php artisan migrate --force
+          php artisan db:seed --class=DemoSeeder --force
+          npm ci && npm run build
+
+      - name: Screenshots
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > serve.log 2>&1 &
+          sleep 3
+          npm install --no-save playwright@1 && npx playwright install --with-deps chromium
+          OUT_DIR=/tmp/shots node .github/screenshots.mjs
+          tail -20 storage/logs/*.log || true
+
+      - name: In Branch "screenshots" ablegen
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout --orphan screenshots
+          git rm -rf --quiet .
+          cp /tmp/shots/*.png .
+          git add *.png
+          git commit -m "Screenshots $(date -u +%Y-%m-%dT%H:%M)"
+          git push -f origin screenshots
