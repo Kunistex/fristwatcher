@@ -18,7 +18,7 @@
 
         <div class="space-y-8">
             <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
-                <legend class="section-title float-left mb-1 w-full">Vertrag</legend>
+                <legend class="section-title float-left mb-4 w-full">Vertrag</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="name" class="label">Bezeichnung</label>
@@ -48,7 +48,7 @@
             </fieldset>
 
             <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
-                <legend class="section-title float-left mb-1 w-full">Kosten</legend>
+                <legend class="section-title float-left mb-4 w-full">Kosten</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="cost" class="label">Betrag in CHF</label>
@@ -67,7 +67,7 @@
             </fieldset>
 
             <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
-                <legend class="section-title float-left mb-1 w-full">Laufzeit und Kündigung</legend>
+                <legend class="section-title float-left mb-4 w-full">Laufzeit und Kündigung</legend>
 
                 <div>
                     <label for="start_date" class="label">Vertragsbeginn</label>
@@ -129,7 +129,7 @@
             </fieldset>
 
             <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
-                <legend class="section-title float-left mb-1 w-full">Erinnerungen</legend>
+                <legend class="section-title float-left mb-4 w-full">Erinnerungen</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="send_buffer_days" class="label">Postweg in Arbeitstagen</label>
@@ -145,7 +145,7 @@
             </fieldset>
 
             <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
-                <legend class="section-title float-left mb-1 w-full">Kündigung an</legend>
+                <legend class="section-title float-left mb-4 w-full">Kündigung an</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="cancellation_address" class="label">Postadresse</label>

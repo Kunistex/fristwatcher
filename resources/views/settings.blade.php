@@ -6,8 +6,8 @@
             @csrf @method('PUT')
 
             <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
-                <legend class="section-title float-left mb-1 w-full">Profil und Adresse</legend>
-                <p class="clear-both -mt-2 text-[14px] text-ink-soft">Die Adresse erscheint als Absender auf Kündigungsschreiben.</p>
+                <legend class="section-title float-left mb-4 w-full">Profil und Adresse</legend>
+                <p class="clear-both -mt-3 text-[14px] text-ink-soft">Die Adresse erscheint als Absender auf Kündigungsschreiben.</p>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="name" class="label">Name</label>
@@ -46,7 +46,7 @@
             </fieldset>
 
             <fieldset class="panel space-y-5 p-5 sm:p-6 [&>legend~*]:clear-both">
-                <legend class="section-title float-left mb-1 w-full">Erinnerungen</legend>
+                <legend class="section-title float-left mb-4 w-full">Erinnerungen</legend>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="reminder_offsets_text" class="label">Erinnern, Tage vor dem Versandtag</label>
