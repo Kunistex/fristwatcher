@@ -17,51 +17,43 @@ Laravel 12, MariaDB, Blade + Alpine.js, Tailwind CSS 4. Läuft auf Shared Hostin
 - Ablaufdaten für Pass, ID, Führerausweis, Garantien, Vignette
 - Dokumente pro Vertrag (Police, Bestätigung)
 
-## Deployment über GitHub Actions
+## Deployment über GitHub Actions (FTP)
 
-Jeder Push auf `main` testet die App gegen MariaDB und deployt danach per rsync über SSH. Fehlen Secrets, wird nur getestet.
+Jeder Push auf `main` testet die App gegen MariaDB, baut sie (Composer ohne Dev-Pakete, Assets) und lädt sie per FTP hoch. Danach ruft der Workflow den abgesicherten Endpunkt `/_deploy` auf, der auf dem Server Migrationen, Vorlagen und Caches erledigt. Ein SSH-Zugang ist nicht nötig. Fehlen Secrets, wird nur getestet.
 
 ### 1. Secrets in GitHub
 
-Repository → Settings → Secrets and variables → Actions → *New repository secret*:
+Repository → Settings → Secrets and variables → Actions:
 
 | Secret | Inhalt |
 | --- | --- |
-| `SSH_HOST` | SSH-Server des Hostings, z.B. `sXX.metanet.ch` |
-| `SSH_PORT` | SSH-Port, falls nicht 22 |
-| `SSH_USER` | SSH-Benutzername |
-| `SSH_PRIVATE_KEY` | Privater Schlüssel des Deploy-Keys (ganzer Inhalt inkl. `-----BEGIN…`) |
-| `DEPLOY_PATH` | Absoluter Pfad zum App-Ordner auf dem Server, z.B. `/home/user/fristwatcher` |
-| `PHP_BIN` | Optional: PHP-8.3-Binary, falls `php` auf dem Server eine ältere Version ist |
-| `SSH_KNOWN_HOSTS` | Optional: Ausgabe von `ssh-keyscan -p PORT HOST` (sonst wird beim Deploy gescannt) |
+| `FTP_SERVER` | FTP-Server, z.B. `ftp.example.ch` |
+| `FTP_USERNAME` | FTP-Benutzer |
+| `FTP_PASSWORD` | FTP-Passwort |
+| `FTP_SERVER_DIR` | Ordner der App auf dem Server, **mit `/` am Ende**, z.B. `/fristwatcher/` |
+| `DEPLOY_HOOK_TOKEN` | Zufallswert, mind. 32 Zeichen (`openssl rand -hex 32`). Gleicher Wert in der `.env` auf dem Server |
+| `APP_URL` | Adresse der App, z.B. `https://fristen.example.ch` |
+| `FTP_PROTOCOL` | Optional: `ftp`, falls der Server kein FTPS kann (Standard `ftps`) |
 
-Deploy-Key erzeugen (lokal):
-
-```bash
-ssh-keygen -t ed25519 -C "github-deploy-fristwatcher" -f fristwatcher_deploy -N ""
-```
-
-`fristwatcher_deploy.pub` im Hosting-Panel als autorisierten SSH-Schlüssel hinterlegen, `fristwatcher_deploy` (privat) als `SSH_PRIVATE_KEY` in GitHub.
+Ohne `DEPLOY_HOOK_TOKEN` und `APP_URL` läuft kein Deployment.
 
 ### 2. Einmalig auf dem Server
 
 1. MariaDB-Datenbank und Benutzer im Hosting-Panel anlegen.
-2. Ordner `DEPLOY_PATH` anlegen und darin `.env` aus `.env.example` erstellen; DB-Zugang, Mail-Zugang und `APP_URL` eintragen.
-3. Ersten Deploy laufen lassen (Push auf `main` oder Actions → *Run workflow*). Er schlägt mit «.env fehlt» fehl, falls Schritt 2 vergessen ging.
-4. Per SSH im App-Ordner:
-   ```bash
-   php artisan key:generate
-   php artisan webpush:vapid      # schreibt VAPID-Schlüssel in .env
-   php artisan config:cache
+2. Per FTP im Ordner `FTP_SERVER_DIR` eine Datei `.env` anlegen (Vorlage: `.env.example`). Eintragen: `APP_URL`, `DB_*`, `MAIL_*` und `DEPLOY_HOOK_TOKEN`. `APP_KEY` und `VAPID_*` leer lassen, die erzeugt das erste Deployment selbst.
+3. Document Root der Domain auf `FTP_SERVER_DIR/public` setzen. Geht das nicht, leitet die `.htaccess` im Hauptordner auf `public/` um und sperrt alles andere.
+4. Push auf `main` oder Actions → *CI und Deployment* → *Run workflow*. Der erste Upload dauert länger (vendor-Ordner).
+5. Cronjob im Panel, jede Minute. Mit PHP-Cron:
    ```
-5. Document Root der Domain auf `DEPLOY_PATH/public` setzen. Geht das nicht, leitet die `.htaccess` im Hauptordner auf `public/` um.
-6. Cronjob im Panel, jede Minute:
+   cd FTP_SERVER_DIR && php artisan schedule:run
    ```
-   * * * * * cd DEPLOY_PATH && php artisan schedule:run >> /dev/null 2>&1
+   Kennt das Hosting nur URL-Cronjobs:
    ```
-7. Seite öffnen: Das erste Konto wird über `/register` angelegt, danach ist die Registrierung geschlossen (`FRISTWATCHER_OPEN_REGISTRATION=true` öffnet sie).
+   https://fristen.example.ch/_cron?token=DEPLOY_HOOK_TOKEN
+   ```
+6. `/register` öffnen und das erste Konto anlegen. Danach ist die Registrierung geschlossen (`FRISTWATCHER_OPEN_REGISTRATION=true` öffnet sie).
 
-Voraussetzungen beim Hosting: PHP 8.2+ (8.3 empfohlen) mit `pdo_mysql`, `mbstring`, `gd`, `intl`, `bcmath` oder `gmp`; SSH-Zugang; Cronjobs.
+Voraussetzungen beim Hosting: PHP 8.2+ (8.3 empfohlen) mit `pdo_mysql`, `mbstring`, `gd`, `intl`, `bcmath` oder `gmp`; Cronjobs.
 
 ## Lokal entwickeln
 

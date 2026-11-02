@@ -333,6 +333,20 @@ class AppFlowTest extends TestCase
     }
 
     #[Test]
+    public function deploy_endpunkte_sind_ohne_gueltiges_token_gesperrt(): void
+    {
+        config(['fristwatcher.deploy_hook_token' => null]);
+        $this->post('/_deploy')->assertNotFound();
+        $this->get('/_cron?token=x')->assertNotFound();
+
+        config(['fristwatcher.deploy_hook_token' => str_repeat('a', 40)]);
+        $this->post('/_deploy', [], ['X-Deploy-Token' => 'falsch'])->assertForbidden();
+        $this->get('/_cron?token=falsch')->assertForbidden();
+
+        $this->get('/_cron?token='.str_repeat('a', 40))->assertOk();
+    }
+
+    #[Test]
     public function test_erinnerung_aus_den_einstellungen(): void
     {
         Notification::fake();

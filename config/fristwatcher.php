@@ -5,6 +5,9 @@ return [
     // Registrierung: true = jeder kann ein Konto anlegen. false = nur das erste Konto.
     'open_registration' => (bool) env('FRISTWATCHER_OPEN_REGISTRATION', false),
 
+    // Token für /_deploy und /_cron (Hosting ohne SSH). Mindestens 32 Zeichen, sonst sind die Endpunkte aus.
+    'deploy_hook_token' => env('DEPLOY_HOOK_TOKEN'),
+
     // Stunde (Ortszeit), zu der Erinnerungen versendet werden.
     'reminder_hour' => (int) env('FRISTWATCHER_REMINDER_HOUR', 7),
 

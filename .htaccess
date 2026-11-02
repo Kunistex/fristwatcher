@@ -2,7 +2,7 @@
 # leitet alle Anfragen in den public-Ordner und sperrt den Rest.
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(\.env|composer\.(json|lock)|artisan)$ - [F,L]
+    RewriteRule ^(\.(?!well-known)|composer\.|package(-lock)?\.json|artisan|README|phpunit|vite\.config) - [F,L]
     RewriteRule ^((app|bootstrap|config|database|resources|routes|storage|tests|vendor)/.*)$ - [F,L]
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
