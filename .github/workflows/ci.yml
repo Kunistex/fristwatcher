@@ -142,4 +142,7 @@ jobs:
       - name: Migrationen und Caches auf dem Server
         if: steps.check.outputs.ready == 'true'
         run: |
-          curl -fsS --max-time 300 -X POST -H "X-Deploy-Token: $DEPLOY_HOOK_TOKEN" "${APP_URL%/}/_deploy" | tee hook.log
+          code=$(curl -sS --max-time 300 -o hook.log -w '%{http_code}' -X POST -H "X-Deploy-Token: $DEPLOY_HOOK_TOKEN" "${APP_URL%/}/_deploy" || echo 000)
+          echo "HTTP $code"
+          head -c 6000 hook.log | sed -E 's/(PASSWORD|password)[^[:space:]]*/\1=***/g'
+          [ "$code" = "200" ] || { echo "::error::/_deploy antwortete mit HTTP $code"; exit 1; }
