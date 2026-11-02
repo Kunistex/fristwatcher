@@ -118,28 +118,27 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         run: npm ci && npm run build && rm -rf node_modules
 
-      - name: Upload per FTP
+      - name: Upload per FTP (lftp, verschlüsselt)
         if: steps.check.outputs.ready == 'true'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
-          local-dir: ./
-          timeout: 120000
-          exclude: |
-            **/.git/**
-            **/.github/**
-            **/node_modules/**
-            tests/**
-            .env
-            .editorconfig
-            phpunit.xml
-            storage/app/**/*.*
-            storage/logs/*.log
-
+        env:
+          FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp > /dev/null
+          DIR="${FTP_SERVER_DIR%/}"; [ -z "$DIR" ] && DIR="/"
+          if [ "$FTP_PROTOCOL" = "ftp" ]; then TLS="set ftp:ssl-allow false;"; else TLS="set ftp:ssl-force true; set ftp:ssl-protect-data true; set ssl:verify-certificate true;"; fi
+          EXCL="--exclude-glob .git/ --exclude-glob .github/ --exclude-glob node_modules/ --exclude-glob tests/ --exclude-glob .env --exclude-glob storage/ --exclude-glob vendor/ --exclude-glob .editorconfig --exclude-glob phpunit.xml"
+          export LFTP_PASSWORD="$FTP_PASSWORD"
+          lftp --env-password -u "$FTP_USERNAME" "$FTP_SERVER" <<LFTP
+          set net:max-retries 3; set net:timeout 30; set net:reconnect-interval-base 5
+          $TLS
+          set ftp:passive-mode true
+          mkdir -p -f "$DIR"
+          cd "$DIR"
+          mkdir -p -f storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/fonts
+          mirror -R --parallel=6 --ignore-time --verbose=1 vendor vendor
+          mirror -R --parallel=6 --verbose=1 $EXCL . .
+          bye
+          LFTP
       - name: Migrationen und Caches auf dem Server
         if: steps.check.outputs.ready == 'true'
         run: |
